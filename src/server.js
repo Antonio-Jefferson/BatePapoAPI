@@ -25,7 +25,7 @@ const validationMessages = joi.object({
     to: joi.string().required(),
     text: joi.string().required().min(1),
     type: joi.string().valid("message", "private_message").required(),
-    from: joi.string(),
+    from: joi.string().required(),
     time: joi.string()
 })
 
@@ -40,7 +40,7 @@ server.post("/participants", async (req, res) => {
     }
 
     try {
-        const isValid = await db.collection("participants").findOne({ name });
+        const isValid = await db.collection("participants").findOne({ name: name });
         if (isValid) {
             res.status(409).send("Usuario já existente!")
             return;
@@ -57,22 +57,25 @@ server.post("/participants", async (req, res) => {
             to: "Todos",
             text: "entra na sala...",
             type: "status",
-            time: day().format("HH:MM:SS")
+            time: day().format("HH:mm:ss")
         }
         await db.collection("messages").insertOne(message)
-
         res.sendStatus(201)
     } catch (error) {
-        res.sendStatus(400);
+        res.sendStatus(500);
     }
 })
 
 server.get("/participants", async (req, res) => {
     try {
         const promise = await db.collection("participants").find().toArray();
-        res.status(200).send(promise);
+        if (!promise) {
+            res.status(404).send("Nenhum participante foi encontrado!");
+            return;
+          }
+        res.send(promise);
     } catch (error) {
-        res.sendStatus(400)
+        res.sendStatus(500)
     }
 })
 
@@ -85,7 +88,7 @@ server.post("/messages", async (req, res) => {
             text,
             type,
             from: user,
-            time: day().format("HH:MM:SS")
+            time: day().format("HH:mm:ss")
         }
         const validateMessage = validationMessages.validate(messageUser);
         if (validateMessage.error) {
@@ -109,7 +112,7 @@ server.get("/messages", async (req, res) => {
     const { user } = req.headers;
     const limit = Number(req.query);
     try {
-        if (limit && limit > 0) {
+        if (limit && limit !== NaN) {
             const data = await db.collection("messages").find().toArray();
             const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
             res.status(200).send(messagesFromUser.slice(-limit))
@@ -152,7 +155,7 @@ setInterval(async () => {
               to: "Todos",
               text: "sai da sala...",
               type: "status",
-              time: day().format("HH:MM:SS"),
+              time: day().format("HH:mm:ss"),
             };
           }
         );
