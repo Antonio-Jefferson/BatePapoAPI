@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
-import joi from "joi";
+import joi, { string } from "joi";
 import dayjs from "dayjs";
 
 dotenv.config();
@@ -112,9 +112,11 @@ server.post("/messages", async (req, res) => {
 })
 server.get("/messages", async (req, res) => {
     const { user } = req.headers;
-    const limit = Number(req.query);
+    const {limit} = parseInt(req.query);
     try {
-        if (limit && limit !== NaN) {
+        if (limit && limit !== string && limit > 0) return res.sendStatus(422)
+
+        if (limit && limit !== NaN && limit > 0) {
             const data = await db.collection("messages").find().toArray();
             const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
             res.status(200).send(messagesFromUser.slice(-limit))
