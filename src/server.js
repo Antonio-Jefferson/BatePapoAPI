@@ -113,19 +113,14 @@ server.post("/messages", async (req, res) => {
 })
 server.get("/messages", async (req, res) => {
     const { user } = req.headers;
-    const {limit} = parseInt(req.query);
+    const limit = parseInt(req.query.limit);
     try {
-        if (limit && limit !== String && limit > 0) return res.sendStatus(422)
-
-        if (limit && limit !== NaN && limit > 0) {
-            const data = await db.collection("messages").find().toArray();
-            const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
-            res.status(200).send(messagesFromUser.slice(-limit))
-        } else {
-            const messages = await db.collection("messages").find().toArray();
-            const messagesFromUser = messages.filter((intem) => intem.from === user || intem.to === "Todos" || intem.type === "message")
-            res.status(200).send(messagesFromUser)
-        }
+        const data = await db.collection("messages").find().toArray();
+        const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
+        if (limit && limit !== NaN) {
+            return res.send(messagesFromUser.slice(-limit));
+          }
+          res.send(messagesFromUser);
     } catch (error) {
         res.sendStatus(500)
     }
