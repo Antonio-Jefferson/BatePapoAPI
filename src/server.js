@@ -115,6 +115,8 @@ server.get("/messages", async (req, res) => {
     const { user } = req.headers;
     const limit = parseInt(req.query.limit);
     try {
+        if(limit <= 0 || typeof(limit) !== "string" ) return res.sendStatus(422);
+
         const data = await db.collection("messages").find().toArray();
         const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
         if (limit && limit !== NaN) {
@@ -130,12 +132,12 @@ server.post("/status", async (req, res) => {
     const { user } = req.headers;
     try {
         const isParticipant = await db.collection("participants").find({ name: user });
-        if (!isParticipant) {
+        if (!isParticipant || !user) {
             res.sendStatus(404)
             return;
         }
         await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
-        res.sendStatus(200);
+        res.sendStatus(404);
     } catch (error) {
         res.sendStatus(500)
     }
