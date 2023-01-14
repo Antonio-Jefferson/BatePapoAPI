@@ -2,13 +2,14 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { MongoClient } from "mongodb";
-import joi, { string } from "joi";
+import joi from "joi";
 import dayjs from "dayjs";
 
 dotenv.config();
 const server = express();
 server.use(cors())
 server.use(express.json())
+const PORT = 5000
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL);
 
@@ -114,7 +115,7 @@ server.get("/messages", async (req, res) => {
     const { user } = req.headers;
     const {limit} = parseInt(req.query);
     try {
-        if (limit && limit !== string && limit > 0) return res.sendStatus(422)
+        if (limit && limit !== String && limit > 0) return res.sendStatus(422)
 
         if (limit && limit !== NaN && limit > 0) {
             const data = await db.collection("messages").find().toArray();
@@ -171,4 +172,4 @@ setInterval(async () => {
     }
   }, 10000);
 
-server.listen(5000, () => console.log(`Running on the door 5000`))
+server.listen(PORT, () => console.log(`Running on the door ${PORT}`))
