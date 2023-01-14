@@ -132,12 +132,12 @@ server.post("/status", async (req, res) => {
     const { user } = req.headers;
     try {
         const isParticipant = await db.collection("participants").find({ name: user });
-        if (!isParticipant || !user) {
+        if (!isParticipant) {
             res.sendStatus(404)
             return;
         }
         await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
-        res.sendStatus(404);
+        res.sendStatus(200);
     } catch (error) {
         res.sendStatus(500)
     }
