@@ -121,7 +121,7 @@ server.get("/messages", async (req, res) => {
         if (limit && limit !== NaN) {
             return res.send(messagesFromUser.slice(-limit));
           }
-          res.send(messagesFromUser);
+          res.send(messagesFromUser.slice(-messagesFromUser.length));
     } catch (error) {
         res.sendStatus(500)
     }
