@@ -115,7 +115,7 @@ server.get("/messages", async (req, res) => {
     const { user } = req.headers;
     const limit = Number(req.query.limit);
     try {
-        if(limit <= 0) return res.sendStatus(422)
+        if(limit <= 0 || limit === NaN) return res.sendStatus(422)
 
         const data = await db.collection("messages").find().toArray();
         const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
