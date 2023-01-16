@@ -29,6 +29,11 @@ const validationMessages = joi.object({
     from: joi.string().required(),
     time: joi.string()
 })
+const validationUpedateMessages = joi.object({
+    to: joi.string().required(),
+    text: joi.string().required().min(1),
+    type: joi.string().valid("message", "private_message").required(),
+})
 
 server.post("/participants", async (req, res) => {
     try {
@@ -177,17 +182,12 @@ setInterval(async () => {
   
     try {
       const thereIsMessage = await db.collection("messages").findOne({ _id: new ObjectId(id) })
-      if (!thereIsMessage) {
-        return res.sendStatus(404);
-      }
+      if (!thereIsMessage) return res.sendStatus(404);
+      
   
-      if (thereIsMessage.from !== user) {
-        return res.sendStatus(401);
-      }
+      if (thereIsMessage.from !== user) return res.sendStatus(401);
   
-      await db.collection("messages").deleteOne({
-        _id: thereIsMessage._id
-      });
+      await db.collection("messages").deleteOne({_id: thereIsMessage._id});
       res.sendStatus(200);
     } catch (error) {
       res.sendStatus(500);
@@ -199,21 +199,20 @@ setInterval(async () => {
     const {id} = req.params;
     const {user}= req.headers;
   
-    const validation = validationMessages.validate(message);
-    if (validation.error) {
-      return res.sendStatus(422);
-    }
+    const validation = validationUpedateMessages.validate(message);
+
+    if (validation.error) return res.sendStatus(422);
   
     try {
       const thereIsUser = await db.collection("participants").findOne({ name: user })
 
-      if (! thereIsUser) return res.sendStatus(422)
+      if (!thereIsUser) return res.sendStatus(422);
 
       const thereIsMessages = await db.collection("messages").findOne({ _id: new ObjectId(id) });
 
-      if (!thereIsMessages) return res.sendStatus(404)
+      if (!thereIsMessages) return res.sendStatus(404);
 
-      if (thereIsMessages.from !== user) return res.sendStatus(401)
+      if (thereIsMessages.from !== user) return res.sendStatus(401);
 
       await db.collection("messages").updateOne({_id: new ObjectId(id)},{$set: message});
       res.sendStatus(201);
