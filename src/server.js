@@ -118,10 +118,9 @@ server.get("/messages", async (req, res) => {
     try {
         const data = await db.collection("messages").find().toArray();
         const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
-        if (limit && limit !== NaN) {
-            return res.send(messagesFromUser.slice(-limit));
-          }
-          res.send(messagesFromUser.slice(-messagesFromUser.length));
+        if (!limit) return res.send(messagesFromUser)
+        if (limit && limit !== NaN) {return res.send(messagesFromUser.slice(-limit));}
+          
     } catch (error) {
         res.sendStatus(500)
     }
