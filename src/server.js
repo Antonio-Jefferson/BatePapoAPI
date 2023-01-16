@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId} from "mongodb";
 import joi from "joi";
 import dayjs from "dayjs";
 
@@ -114,12 +114,16 @@ server.post("/messages", async (req, res) => {
 server.get("/messages", async (req, res) => {
     const { user } = req.headers;
     const limit = req.query.limit ? parseInt(req.query.limit) : null;
+
     if (limit !== null && (limit <= 0 || isNaN(limit)) ) return res.sendStatus(422);
+
     try {
         const data = await db.collection("messages").find().toArray();
         const messagesFromUser = data.filter((intem) => intem.from === user || intem.to === user || intem.to === "Todos" || intem.type === "message")
-        if (!limit) return res.send(messagesFromUser)
-        if (limit && limit !== NaN) {return res.send(messagesFromUser.slice(-limit));}
+
+        if (!limit) return res.send(messagesFromUser);
+
+        if (limit && limit !== NaN) return res.send(messagesFromUser.reverse().slice(limit));
           
     } catch (error) {
         res.sendStatus(500)
@@ -166,5 +170,56 @@ setInterval(async () => {
       console.log(error);
     }
   }, 10000);
+
+  server.delete('/messages/:id', async (req, res) => {
+    const { id } = req.params;
+    const {user} = req.headers;
+  
+    try {
+      const thereIsMessage = await db.collection("messages").findOne({ _id: new ObjectId(id) })
+      if (!thereIsMessage) {
+        return res.sendStatus(404);
+      }
+  
+      if (thereIsMessage.from !== user) {
+        return res.sendStatus(401);
+      }
+  
+      await db.collection("messages").deleteOne({
+        _id: thereIsMessage._id
+      });
+      res.sendStatus(200);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+  });
+  
+  server.put('/messages/:id', async (req, res) => {
+    const message = req.body;
+    const {id} = req.params;
+    const {user}= req.headers;
+  
+    const validation = validationMessages.validate(message);
+    if (validation.error) {
+      return res.sendStatus(422);
+    }
+  
+    try {
+      const thereIsUser = await db.collection("participants").findOne({ name: user })
+
+      if (! thereIsUser) return res.sendStatus(422)
+
+      const thereIsMessages = await db.collection("messages").findOne({ _id: new ObjectId(id) });
+
+      if (!thereIsMessages) return res.sendStatus(404)
+
+      if (thereIsMessages.from !== user) return res.sendStatus(401)
+
+      await db.collection("messages").updateOne({_id: new ObjectId(id)},{$set: message});
+      res.sendStatus(201);
+    } catch (error) {
+      res.sendStatus(500);
+    }
+  });
 
 server.listen(PORT, () => console.log(`Running on the door ${PORT}`))
